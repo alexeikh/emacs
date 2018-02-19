@@ -291,14 +291,17 @@ in the order given by 'git status'."
   ;; corresponding upstream branch, and the file was modified
   ;; upstream.  We'd need to check against the upstream tracking
   ;; branch for that (an extra process call or two).
-  (let* ((args
+  (let* (;; Avoid repository locking during "git status" (bug#21559).
+         (process-environment
+          (cons "GIT_OPTIONAL_LOCKS=0" process-environment))
+         (args
           `("status" "--porcelain" "-z"
             ;; Just to be explicit, it's the default anyway.
             "--untracked-files"
             ,@(when (version<= "1.7.6.3" (vc-git--program-version))
                 '("--ignored"))
             "--"))
-        (status (apply #'vc-git--run-command-string file args)))
+         (status (apply #'vc-git--run-command-string file args)))
     ;; Alternatively, the `ignored' state could be detected with 'git
     ;; ls-files -i -o --exclude-standard', but that's an extra process
     ;; call, and the `ignored' state is rarely needed.
@@ -939,7 +942,10 @@ This prompts for a branch to merge from."
 
 (defun vc-git-conflicted-files (directory)
   "Return the list of files with conflicts in DIRECTORY."
-  (let* ((status
+  (let* (;; Avoid repository locking during "git status" (bug#21559).
+         (process-environment
+          (cons "GIT_OPTIONAL_LOCKS=0" process-environment))
+         (status
           (vc-git--run-command-string directory "status" "--porcelain" "--"))
          (lines (when status (split-string status "\n" 'omit-nulls)))
          files)
