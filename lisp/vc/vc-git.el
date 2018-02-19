@@ -292,16 +292,13 @@ in the order given by 'git status'."
   ;; upstream.  We'd need to check against the upstream tracking
   ;; branch for that (an extra process call or two).
   (let* ((args
-          `(;; Avoid locking repository during "git status" (bug#21559).
-            ,@(when (version<= "2.15.0" (vc-git--program-version))
-                '("--no-optional-locks"))
-            "status" "--porcelain" "-z"
+          `("status" "--porcelain" "-z"
             ;; Just to be explicit, it's the default anyway.
             "--untracked-files"
             ,@(when (version<= "1.7.6.3" (vc-git--program-version))
                 '("--ignored"))
             "--"))
-         (status (apply #'vc-git--run-command-string file args)))
+        (status (apply #'vc-git--run-command-string file args)))
     ;; Alternatively, the `ignored' state could be detected with 'git
     ;; ls-files -i -o --exclude-standard', but that's an extra process
     ;; call, and the `ignored' state is rarely needed.
@@ -942,12 +939,8 @@ This prompts for a branch to merge from."
 
 (defun vc-git-conflicted-files (directory)
   "Return the list of files with conflicts in DIRECTORY."
-  (let* ((args
-          `(;; Avoid locking repository during "git status" (bug#21559).
-            ,@(when (version<= "2.15.0" (vc-git--program-version))
-                '("--no-optional-locks"))
-            "status" "--porcelain" "--"))
-         (status (apply #'vc-git--run-command-string directory args))
+  (let* ((status
+          (vc-git--run-command-string directory "status" "--porcelain" "--"))
          (lines (when status (split-string status "\n" 'omit-nulls)))
          files)
     ;; TODO: Look into reimplementing `vc-git-state', as well as
